@@ -1,90 +1,68 @@
-import React, { useState, useEffect } from 'react';
+"use client";
+import React, { useState } from 'react';
 import axios from 'axios';
-
 import VideoForm from '@/components/VideoForm';
 import VideoCard from '@/components/VideoCard';
 import DownloadButton from '@/components/DownloadButton';
 
-import { getVideoInfo, downloadVideo } from '@/lib/api';
-
-interface VideoData {
+interface VideoInfo {
   title: string;
   thumbnail: string;
   duration: number;
   uploader: string;
-  id: string;
 }
 
-export default function HomePage() {
-  const [videoInfo, setVideoInfo] = useState<VideoData | null>(null);
-  const [loadingInfo, setLoadingInfo] = useState<boolean>(false);
-  const [loadingDownload, setLoadingDownload] = useState<boolean>(false);
+export default function Home() {
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentUrl, setCurrentUrl] = useState<string>('');
+  const [currentUrl, setCurrentUrl] = useState('');
 
-  const handleGetVideoInfo = async (url: string) => {
-    setLoadingInfo(true);
+  const handleUrlSubmit = async (url: string) => {
+    setLoading(true);
     setError(null);
     setVideoInfo(null);
     setCurrentUrl(url);
     try {
-      const data = await getVideoInfo(url);
-      setVideoInfo(data);
-    } catch (err: any) {
-      setError(err.message);
+      const res = await axios.post('/api/info', { url });
+      setVideoInfo(res.data);
+    } catch {
+      setError('영상 정보를 불러올 수 없습니다. URL을 확인해주세요.');
     } finally {
-      setLoadingInfo(false);
+      setLoading(false);
     }
   };
 
-  const handleDownloadVideo = async () => {
-    if (!videoInfo || !currentUrl) return;
-
-    setLoadingDownload(true);
+  const handleDownload = async () => {
+    setDownloading(true);
     setError(null);
     try {
-      const blob = await downloadVideo(currentUrl);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      // Sanitize title for filename, replacing potentially problematic characters
-      const safeTitle = videoInfo.title.replace(/[^a-zA-Z0-9_\s-]/g, '').replace(/\s+/g, '_');
-      a.download = `${safeTitle}.mp4`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      setError(err.message);
+      const res = await axios.post('/api/download', { url: currentUrl }, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${videoInfo?.title || 'video'}.mp4`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      setError('다운로드에 실패했습니다. 다시 시도해주세요.');
     } finally {
-      setLoadingDownload(false);
+      setDownloading(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-blue-900 to-purple-900 text-white">
-      <h1 className="text-5xl font-bold mb-12 text-center drop-shadow-lg">YouTube Video Downloader</h1>
-      
-      <VideoForm onUrlSubmit={handleGetVideoInfo} loading={loadingInfo || loadingDownload} />
-
-      {loadingInfo && <p className="mt-8 text-lg">영상 정보를 불러오는 중...</p>}
-      {error && (
-        <div className="mt-8 p-4 bg-red-500 bg-opacity-80 rounded-lg shadow-lg max-w-md w-full text-center">
-          <p className="font-semibold">오류 발생:</p>
-          <p>{error}</p>
-        </div>
-      )}
-
+    <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-8 gap-6">
+      <h1 className="text-3xl font-bold">YouTube 다운로더</h1>
+      <VideoForm onUrlSubmit={handleUrlSubmit} loading={loading} />
+      {error && <p className="text-red-400">{error}</p>}
       {videoInfo && (
-        <div className="mt-12 flex flex-col items-center gap-8">
-          <VideoCard
-            title={videoInfo.title}
-            thumbnail={videoInfo.thumbnail}
-            duration={videoInfo.duration}
-            uploader={videoInfo.uploader}
-          />
-          <DownloadButton onDownload={handleDownloadVideo} loading={loadingDownload} />
-        </div>
+        <>
+          <VideoCard {...videoInfo} />
+          <DownloadButton onDownload={handleDownload} loading={downloading} />
+        </>
       )}
     </main>
   );
