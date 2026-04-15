@@ -62,7 +62,6 @@ const MatrixRain = () => {
     const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%&*<>[]{}';
     const fontSize = 14;
     const columns = Math.floor(canvas.width / fontSize);
-
     const drops: number[] = Array(columns).fill(1);
     const brightDrops: boolean[] = Array(columns).fill(false).map(() => Math.random() < 0.15);
     const brightTimer: number[] = Array(columns).fill(0);
@@ -96,7 +95,6 @@ const MatrixRain = () => {
 
         ctx.fillText(char, x, y);
         ctx.shadowBlur = 0;
-
         if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
@@ -108,7 +106,6 @@ const MatrixRain = () => {
       canvas.height = window.innerHeight;
     };
     window.addEventListener('resize', handleResize);
-
     return () => {
       clearInterval(interval);
       window.removeEventListener('resize', handleResize);
@@ -128,6 +125,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [waitingMsg, setWaitingMsg] = useState<string | null>(null);
   const [currentUrl, setCurrentUrl] = useState('');
 
   const { displayed: typedDesc, done: descDone } = useTypingLoop('유튜브 링크를 입력하고 다운로드 하세요', 60, 5000);
@@ -136,11 +134,16 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setVideoInfo(null);
+    setWaitingMsg(null);
     setCurrentUrl(url);
     try {
-      const data = await getVideoInfo(url);
+      const data = await getVideoInfo(url, (seconds) => {
+        setWaitingMsg(`// 서버 시작 중... ${seconds}초 경과 (최대 60초 소요)`);
+      });
+      setWaitingMsg(null);
       setVideoInfo(data);
     } catch {
+      setWaitingMsg(null);
       setError('// Error: 영상 정보를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
@@ -198,6 +201,12 @@ export default function Home() {
             </div>
           </div>
           <VideoForm onUrlSubmit={handleUrlSubmit} loading={loading} />
+          {waitingMsg && (
+            <div className="mt-3 flex items-center gap-2">
+              <span className="animate-spin text-[#00ff88]">⟳</span>
+              <p className="text-[#00ff88] text-sm font-mono">{waitingMsg}</p>
+            </div>
+          )}
           {error && (
             <p className="text-red-400 text-sm mt-3 font-mono">{error}</p>
           )}
