@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import VideoForm from '@/components/VideoForm';
 import VideoCard from '@/components/VideoCard';
 import DownloadButton from '@/components/DownloadButton';
+import { getVideoInfo, downloadVideo } from '@/lib/api';
 
 interface VideoInfo {
   title: string;
@@ -91,23 +91,18 @@ const MatrixRain = () => {
           ctx.shadowColor = '#00ff88';
           ctx.fillStyle = '#00ff88';
           ctx.font = `${fontSize}px monospace`;
-          if (Math.random() < 0.02) {
-            brightDrops[i] = true;
-          }
+          if (Math.random() < 0.02) brightDrops[i] = true;
         }
 
         ctx.fillText(char, x, y);
         ctx.shadowBlur = 0;
 
-        if (y > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
+        if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     };
 
     const interval = setInterval(draw, 35);
-
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -143,8 +138,8 @@ export default function Home() {
     setVideoInfo(null);
     setCurrentUrl(url);
     try {
-      const res = await axios.post('/api/info', { url });
-      setVideoInfo(res.data);
+      const data = await getVideoInfo(url);
+      setVideoInfo(data);
     } catch {
       setError('// Error: 영상 정보를 불러올 수 없습니다.');
     } finally {
@@ -156,8 +151,8 @@ export default function Home() {
     setDownloading(true);
     setError(null);
     try {
-      const res = await axios.post('/api/download', { url: currentUrl }, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const blob = await downloadVideo(currentUrl);
+      const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `${videoInfo?.title || 'video'}.mp4`);
@@ -174,7 +169,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center p-8 gap-6 relative overflow-hidden">
       <MatrixRain />
-
       <div className="w-full max-w-2xl relative z-10">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-3 h-3 rounded-full bg-red-500"></span>
@@ -188,7 +182,6 @@ export default function Home() {
         </div>
         <div className="border border-gray-700 rounded-lg p-6 bg-[#111111]/90 backdrop-blur-sm">
           <p className="text-gray-500 text-sm mb-4 font-mono">// YouTube Video Downloader v1.0.0</p>
-
           <div className="flex items-center justify-center mb-8">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#7c3aed] via-[#00ff88] to-[#7c3aed] rounded-lg blur opacity-40 group-hover:opacity-70 transition duration-500 animate-pulse"></div>
@@ -204,7 +197,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-
           <VideoForm onUrlSubmit={handleUrlSubmit} loading={loading} />
           {error && (
             <p className="text-red-400 text-sm mt-3 font-mono">{error}</p>
@@ -216,7 +208,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
         <p className="text-center text-gray-700 text-xs font-mono mt-3">
           // powered by yt-dlp · built with Next.js + FastAPI
         </p>
