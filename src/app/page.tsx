@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import VideoForm from '@/components/VideoForm';
 import VideoCard from '@/components/VideoCard';
@@ -12,12 +12,130 @@ interface VideoInfo {
   uploader: string;
 }
 
+const useTypingLoop = (text: string, typingSpeed: number = 60, pauseTime: number = 5000) => {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let i = 0;
+    let typing: ReturnType<typeof setInterval>;
+    let pause: ReturnType<typeof setTimeout>;
+
+    const startTyping = () => {
+      i = 0;
+      setDisplayed('');
+      setDone(false);
+      typing = setInterval(() => {
+        if (i < text.length) {
+          setDisplayed(text.slice(0, i + 1));
+          i++;
+        } else {
+          setDone(true);
+          clearInterval(typing);
+          pause = setTimeout(() => startTyping(), pauseTime);
+        }
+      }, typingSpeed);
+    };
+
+    startTyping();
+    return () => {
+      clearInterval(typing);
+      clearTimeout(pause);
+    };
+  }, [text, typingSpeed, pauseTime]);
+
+  return { displayed, done };
+};
+
+const MatrixRain = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%&*<>[]{}';
+    const fontSize = 14;
+    const columns = Math.floor(canvas.width / fontSize);
+
+    const drops: number[] = Array(columns).fill(1);
+    const brightDrops: boolean[] = Array(columns).fill(false).map(() => Math.random() < 0.15);
+    const brightTimer: number[] = Array(columns).fill(0);
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < drops.length; i++) {
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        const x = i * fontSize;
+        const y = drops[i] * fontSize;
+
+        if (brightDrops[i]) {
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = '#ffffff';
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${fontSize}px monospace`;
+          brightTimer[i]++;
+          if (brightTimer[i] > 10) {
+            brightDrops[i] = false;
+            brightTimer[i] = 0;
+          }
+        } else {
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = '#00ff88';
+          ctx.fillStyle = '#00ff88';
+          ctx.font = `${fontSize}px monospace`;
+          if (Math.random() < 0.02) {
+            brightDrops[i] = true;
+          }
+        }
+
+        ctx.fillText(char, x, y);
+        ctx.shadowBlur = 0;
+
+        if (y > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    };
+
+    const interval = setInterval(draw, 35);
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed top-0 left-0 w-full h-full opacity-10 pointer-events-none"
+    />
+  );
+};
+
 export default function Home() {
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUrl, setCurrentUrl] = useState('');
+
+  const { displayed: typedDesc, done: descDone } = useTypingLoop('유튜브 링크를 입력하고 다운로드 하세요', 60, 5000);
 
   const handleUrlSubmit = async (url: string) => {
     setLoading(true);
@@ -28,7 +146,7 @@ export default function Home() {
       const res = await axios.post('/api/info', { url });
       setVideoInfo(res.data);
     } catch {
-      setError('영상 정보를 불러올 수 없습니다. URL을 확인해주세요.');
+      setError('// Error: 영상 정보를 불러올 수 없습니다.');
     } finally {
       setLoading(false);
     }
@@ -47,23 +165,62 @@ export default function Home() {
       link.click();
       link.remove();
     } catch {
-      setError('다운로드에 실패했습니다. 다시 시도해주세요.');
+      setError('// Error: 다운로드에 실패했습니다.');
     } finally {
       setDownloading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-8 gap-6">
-      <h1 className="text-3xl font-bold">YouTube 다운로더</h1>
-      <VideoForm onUrlSubmit={handleUrlSubmit} loading={loading} />
-      {error && <p className="text-red-400">{error}</p>}
-      {videoInfo && (
-        <>
-          <VideoCard {...videoInfo} />
-          <DownloadButton onDownload={handleDownload} loading={downloading} />
-        </>
-      )}
+    <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center p-8 gap-6 relative overflow-hidden">
+      <MatrixRain />
+
+      <div className="w-full max-w-2xl relative z-10">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-3 h-3 rounded-full bg-red-500"></span>
+          <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+          <span className="w-3 h-3 rounded-full bg-green-500"></span>
+          <span className="ml-2 text-gray-500 text-sm font-mono">
+            {typedDesc}
+            {!descDone && <span className="animate-pulse">|</span>}
+            {descDone && <span className="animate-pulse text-gray-500">|</span>}
+          </span>
+        </div>
+        <div className="border border-gray-700 rounded-lg p-6 bg-[#111111]/90 backdrop-blur-sm">
+          <p className="text-gray-500 text-sm mb-4 font-mono">// YouTube Video Downloader v1.0.0</p>
+
+          <div className="flex items-center justify-center mb-8">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#7c3aed] via-[#00ff88] to-[#7c3aed] rounded-lg blur opacity-40 group-hover:opacity-70 transition duration-500 animate-pulse"></div>
+              <div className="relative flex items-center bg-[#0d0d0d] rounded-lg px-6 py-3 border border-gray-700">
+                <span className="text-[#7c3aed] text-3xl font-bold font-mono leading-none">▌</span>
+                <h1 className="text-2xl font-bold font-mono px-2">
+                  <span className="text-white">YouTube </span>
+                  <span className="bg-gradient-to-r from-[#7c3aed] to-[#00ff88] bg-clip-text text-transparent">
+                    Downloader
+                  </span>
+                </h1>
+                <span className="text-[#00ff88] text-3xl font-bold font-mono leading-none">▐</span>
+              </div>
+            </div>
+          </div>
+
+          <VideoForm onUrlSubmit={handleUrlSubmit} loading={loading} />
+          {error && (
+            <p className="text-red-400 text-sm mt-3 font-mono">{error}</p>
+          )}
+          {videoInfo && (
+            <div className="mt-6 flex flex-col gap-4">
+              <VideoCard {...videoInfo} />
+              <DownloadButton onDownload={handleDownload} loading={downloading} />
+            </div>
+          )}
+        </div>
+
+        <p className="text-center text-gray-700 text-xs font-mono mt-3">
+          // powered by yt-dlp · built with Next.js + FastAPI
+        </p>
+      </div>
     </main>
   );
 }

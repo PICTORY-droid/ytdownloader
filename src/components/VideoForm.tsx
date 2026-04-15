@@ -16,21 +16,28 @@ const VideoForm: React.FC<VideoFormProps> = ({ onUrlSubmit, loading }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 bg-gray-800 rounded-lg shadow-lg w-full max-w-md">
-      <input
-        type="text"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="YouTube URL을 입력하세요"
-        className="p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-        disabled={loading}
-      />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex items-center bg-[#1a1a1a] border border-gray-700 rounded-md focus-within:border-[#00ff88] transition-colors duration-200">
+        <span className="text-[#00ff88] px-3 text-lg">🔗</span>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="YouTube URL을 입력하세요"
+          className="flex-1 p-3 bg-transparent text-gray-300 placeholder-gray-600 focus:outline-none font-mono text-sm"
+          disabled={loading}
+        />
+      </div>
       <button
         type="submit"
-        className={`px-4 py-2 rounded-md font-semibold ${loading ? 'bg-blue-600 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-white transition-colors duration-200`}
         disabled={loading}
+        className={`w-full py-3 rounded-md font-mono font-bold text-sm transition-all duration-200
+          ${loading
+            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            : 'bg-gradient-to-r from-[#7c3aed] to-[#00ff88] text-black hover:opacity-90 hover:scale-[1.02]'
+          }`}
       >
-        {loading ? '로딩 중...' : '정보 확인'}
+        {loading ? '로딩 중...' : '▶ 링크 확인'}
       </button>
     </form>
   );
