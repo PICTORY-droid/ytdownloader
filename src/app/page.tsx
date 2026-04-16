@@ -160,9 +160,7 @@ const FadeInUp = ({
   return (
     <div
       ref={ref}
-      style={{
-        transitionDelay: `${delay}ms`,
-      }}
+      style={{ transitionDelay: `${delay}ms` }}
       className={`transition-all duration-700 ease-out
         ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
     >
@@ -232,6 +230,7 @@ export default function Home() {
 
       {/* 콘텐츠 */}
       <div className="w-full max-w-xl relative z-10">
+
         {/* 타이틀 바 */}
         <FadeInUp delay={0}>
           <div className="flex items-center gap-2 mb-2">
@@ -319,12 +318,19 @@ export default function Home() {
           </div>
         </FadeInUp>
 
-        {/* 하단 */}
+        {/* 하단 크레딧 */}
         <FadeInUp delay={400}>
-          <p className="text-center text-gray-700 text-xs font-mono mt-3">
-            // powered by yt-dlp · built with Next.js + FastAPI
-          </p>
+          <div className="flex flex-col items-center gap-1 mt-3">
+            <p className="text-gray-700 text-xs font-mono whitespace-nowrap">
+              // yt-dlp · Next.js + FastAPI
+            </p>
+            <p className="text-gray-600 text-xs font-mono whitespace-nowrap">
+              // developed by{" "}
+              <span className="text-[#7c3aed]">@PICTORY-DROID</span>
+            </p>
+          </div>
         </FadeInUp>
+
       </div>
     </main>
   );
