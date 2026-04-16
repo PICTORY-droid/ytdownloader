@@ -9,7 +9,7 @@ from typing import Optional
 
 router = APIRouter()
 
-PIPED_API = "https://pipedapi.kavin.rocks"
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
 class VideoURL(BaseModel):
     url: str
@@ -34,15 +34,25 @@ async def get_video_info(video_url: VideoURL):
     try:
         video_id = extract_video_id(video_url.url)
         async with httpx.AsyncClient(timeout=15) as client:
-            response = await client.get(f"{PIPED_API}/streams/{video_id}")
-            if response.status_code != 200:
-                raise HTTPException(status_code=400, detail="영상 정보를 가져올 수 없습니다.")
+            response = await client.get(
+                "https://www.googleapis.com/youtube/v3/videos",
+                params={
+                    "part": "snippet,contentDetails",
+                    "id": video_id,
+                    "key": YOUTUBE_API_KEY
+                }
+            )
             data = response.json()
+            if not data.get("items"):
+                raise HTTPException(status_code=400, detail="영상을 찾을 수 없습니다.")
+            item = data["items"][0]
+            snippet = item["snippet"]
+            duration_iso = item["contentDetails"]["duration"]
             return {
-                "title": data.get("title"),
-                "thumbnail": data.get("thumbnailUrl"),
-                "duration": data.get("duration"),
-                "uploader": data.get("uploader"),
+                "title": snippet.get("title"),
+                "thumbnail": snippet["thumbnails"].get("high", {}).get("url"),
+                "duration": duration_iso,
+                "uploader": snippet.get("channelTitle"),
                 "id": video_id
             }
     except ValueError as e:
