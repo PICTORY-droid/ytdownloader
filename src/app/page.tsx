@@ -164,46 +164,59 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center p-8 gap-6 relative overflow-hidden">
+    <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center px-4 py-8 sm:p-8 gap-6 relative overflow-hidden">
       <MatrixRain />
-      <div className="w-full max-w-2xl relative z-10">
+      <div className="w-full max-w-xl relative z-10">
+        {/* 타이틀 바 */}
         <div className="flex items-center gap-2 mb-2">
-          <span className="w-3 h-3 rounded-full bg-red-500"></span>
-          <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-          <span className="w-3 h-3 rounded-full bg-green-500"></span>
-          <span className="ml-2 text-gray-500 text-sm font-mono">
+          <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
+          <span className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0"></span>
+          <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
+          <span className="ml-2 text-gray-500 text-xs sm:text-sm font-mono truncate">
             {typedDesc}
             {!descDone && <span className="animate-pulse">|</span>}
             {descDone && <span className="animate-pulse text-gray-500">|</span>}
           </span>
         </div>
-        <div className="border border-gray-700 rounded-lg p-6 bg-[#111111]/90 backdrop-blur-sm">
-          <p className="text-gray-500 text-sm mb-4 font-mono">// YouTube Video Downloader v1.0.0</p>
-          <div className="flex items-center justify-center mb-8">
-            <div className="relative group">
+
+        {/* 메인 카드 */}
+        <div className="border border-gray-700 rounded-lg p-4 sm:p-6 bg-[#111111]/90 backdrop-blur-sm">
+          <p className="text-gray-500 text-xs sm:text-sm mb-4 font-mono">// YouTube Video Downloader v1.0.0</p>
+
+          {/* 로고 */}
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
+            <div className="relative group w-full max-w-xs sm:max-w-sm">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#7c3aed] via-[#00ff88] to-[#7c3aed] rounded-lg blur opacity-40 group-hover:opacity-70 transition duration-500 animate-pulse"></div>
-              <div className="relative flex items-center bg-[#0d0d0d] rounded-lg px-6 py-3 border border-gray-700">
-                <span className="text-[#7c3aed] text-3xl font-bold font-mono leading-none">▌</span>
-                <h1 className="text-2xl font-bold font-mono px-2">
+              <div className="relative flex items-center justify-center bg-[#0d0d0d] rounded-lg px-4 sm:px-6 py-3 border border-gray-700">
+                <span className="text-[#7c3aed] text-2xl sm:text-3xl font-bold font-mono leading-none">▌</span>
+                <h1 className="text-xl sm:text-2xl font-bold font-mono px-2 text-center">
                   <span className="text-white">YouTube </span>
                   <span className="bg-gradient-to-r from-[#7c3aed] to-[#00ff88] bg-clip-text text-transparent">
                     Downloader
                   </span>
                 </h1>
-                <span className="text-[#00ff88] text-3xl font-bold font-mono leading-none">▐</span>
+                <span className="text-[#00ff88] text-2xl sm:text-3xl font-bold font-mono leading-none">▐</span>
               </div>
             </div>
           </div>
+
+          {/* 폼 */}
           <VideoForm onUrlSubmit={handleUrlSubmit} loading={loading} />
+
+          {/* 대기 메시지 */}
           {waitingMsg && (
             <div className="mt-3 flex items-center gap-2">
-              <span className="animate-spin text-[#00ff88]">⟳</span>
-              <p className="text-[#00ff88] text-sm font-mono">{waitingMsg}</p>
+              <span className="animate-spin text-[#00ff88] flex-shrink-0">⟳</span>
+              <p className="text-[#00ff88] text-xs sm:text-sm font-mono">{waitingMsg}</p>
             </div>
           )}
+
+          {/* 에러 */}
           {error && (
-            <p className="text-red-400 text-sm mt-3 font-mono">{error}</p>
+            <p className="text-red-400 text-xs sm:text-sm mt-3 font-mono break-words">{error}</p>
           )}
+
+          {/* 비디오 정보 + 다운로드 */}
           {videoInfo && (
             <div className="mt-6 flex flex-col gap-4">
               <VideoCard {...videoInfo} />
@@ -211,6 +224,8 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {/* 하단 */}
         <p className="text-center text-gray-700 text-xs font-mono mt-3">
           // powered by yt-dlp · built with Next.js + FastAPI
         </p>
