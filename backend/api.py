@@ -1,6 +1,7 @@
 import os
 import re
 import httpx
+import asyncio
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -10,6 +11,7 @@ router = APIRouter()
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
+RAPIDAPI_HOST = "youtube-mp41.p.rapidapi.com"
 
 class VideoURL(BaseModel):
     url: str
@@ -78,26 +80,42 @@ async def get_video_info(video_url: VideoURL):
 async def download_video(request: DownloadRequest):
     try:
         video_id = extract_video_id(request.url)
+        headers = {
+            "Content-Type": "application/json",
+            "x-rapidapi-host": RAPIDAPI_HOST,
+            "x-rapidapi-key": RAPIDAPI_KEY
+        }
         async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.get(
-                "https://youtube-mp41.p.rapidapi.com/api/v1/download",
+            # 1단계: progressId 받기
+            res1 = await client.get(
+                f"https://{RAPIDAPI_HOST}/api/v1/download",
                 params={
                     "id": video_id,
                     "format": request.format,
                     "audioQuality": "128",
                     "addInfo": "false"
                 },
-                headers={
-                    "Content-Type": "application/json",
-                    "x-rapidapi-host": "youtube-mp41.p.rapidapi.com",
-                    "x-rapidapi-key": RAPIDAPI_KEY
-                }
+                headers=headers
             )
-            data = response.json()
-            download_url = data.get("url") or data.get("downloadUrl") or data.get("link")
-            if not download_url:
-                raise HTTPException(status_code=500, detail=f"다운로드 링크를 가져올 수 없습니다: {data}")
-            return RedirectResponse(url=download_url)
+            data1 = res1.json()
+            progress_id = data1.get("progressId")
+            if not progress_id:
+                raise HTTPException(status_code=500, detail=f"progressId 없음: {data1}")
+
+            # 2단계: 실제 다운로드 링크 받기 (최대 10회 시도)
+            for _ in range(10):
+                await asyncio.sleep(3)
+                res2 = await client.get(
+                    f"https://{RAPIDAPI_HOST}/api/v1/progress",
+                    params={"id": progress_id},
+                    headers=headers
+                )
+                data2 = res2.json()
+                download_url = data2.get("url") or data2.get("downloadUrl") or data2.get("link")
+                if download_url:
+                    return RedirectResponse(url=download_url)
+
+            raise HTTPException(status_code=500, detail="다운로드 링크 생성 시간 초과")
     except HTTPException:
         raise
     except Exception as e:
