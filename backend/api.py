@@ -20,8 +20,10 @@ class DownloadRequest(BaseModel):
 
 def extract_video_id(url: str) -> str:
     patterns = [
-        r'(?:v=|\/)([0-9A-Za-z_-]{11})',
-        r'youtu\.be\/([0-9A-Za-z_-]{11})',
+        r'(?:youtube\.com\/watch\?v=)([0-9A-Za-z_-]{11})',
+        r'(?:youtu\.be\/)([0-9A-Za-z_-]{11})',
+        r'(?:youtube\.com\/embed\/)([0-9A-Za-z_-]{11})',
+        r'(?:youtube\.com\/shorts\/)([0-9A-Za-z_-]{11})',
     ]
     for pattern in patterns:
         match = re.search(pattern, url)
@@ -57,6 +59,8 @@ async def get_video_info(video_url: VideoURL):
             }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"영상 정보를 불러올 수 없습니다: {e}")
 
