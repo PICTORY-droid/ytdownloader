@@ -2,21 +2,21 @@ import os
 import re
 import httpx
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from yt_dlp import YoutubeDL
-from starlette.responses import FileResponse
 from typing import Optional
 
 router = APIRouter()
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
+RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 
 class VideoURL(BaseModel):
     url: str
 
 class DownloadRequest(BaseModel):
     url: str
-    filename: Optional[str] = None
+    format: Optional[str] = "720"
 
 def extract_video_id(url: str) -> str:
     patterns = [
@@ -77,28 +77,28 @@ async def get_video_info(video_url: VideoURL):
 @router.post("/download")
 async def download_video(request: DownloadRequest):
     try:
-        download_dir = "./downloads"
-        os.makedirs(download_dir, exist_ok=True)
-        output_template = os.path.join(download_dir, '%(title)s.%(ext)s')
-        ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'outtmpl': output_template,
-            'merge_output_format': 'mp4',
-            'noplaylist': True,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['ios', 'web_creator'],
+        video_id = extract_video_id(request.url)
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.get(
+                "https://youtube-mp41.p.rapidapi.com/api/v1/download",
+                params={
+                    "id": video_id,
+                    "format": request.format,
+                    "audioQuality": "128",
+                    "addInfo": "false"
+                },
+                headers={
+                    "Content-Type": "application/json",
+                    "x-rapidapi-host": "youtube-mp41.p.rapidapi.com",
+                    "x-rapidapi-key": RAPIDAPI_KEY
                 }
-            },
-        }
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(request.url, download=True)
-            filename = ydl.prepare_filename(info)
-            if not os.path.exists(filename):
-                base = os.path.splitext(filename)[0]
-                filename = base + '.mp4'
-            if not os.path.exists(filename):
-                raise HTTPException(status_code=500, detail="다운로드된 파일을 찾을 수 없습니다.")
-            return FileResponse(path=filename, media_type="video/mp4", filename=os.path.basename(filename))
+            )
+            data = response.json()
+            download_url = data.get("url") or data.get("downloadUrl") or data.get("link")
+            if not download_url:
+                raise HTTPException(status_code=500, detail=f"다운로드 링크를 가져올 수 없습니다: {data}")
+            return RedirectResponse(url=download_url)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"다운로드 실패: {e}")
