@@ -10,6 +10,8 @@ from typing import Optional
 router = APIRouter()
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
+print(f"DEBUG API KEY: {YOUTUBE_API_KEY[:10] if YOUTUBE_API_KEY else 'NOT FOUND'}")
+
 
 class VideoURL(BaseModel):
     url: str
