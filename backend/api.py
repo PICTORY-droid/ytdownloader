@@ -84,7 +84,7 @@ async def download_video(request: DownloadRequest):
             "x-rapidapi-host": RAPIDAPI_HOST,
             "x-rapidapi-key": RAPIDAPI_KEY
         }
-        async with httpx.AsyncClient(timeout=60) as client:
+        async with httpx.AsyncClient(timeout=120) as client:
             # 1단계: progressId 받기
             res1 = await client.get(
                 f"https://{RAPIDAPI_HOST}/api/v1/download",
@@ -101,18 +101,17 @@ async def download_video(request: DownloadRequest):
             if not progress_id:
                 raise HTTPException(status_code=500, detail=f"progressId 없음: {data1}")
 
-            # 2단계: 실제 다운로드 링크 받기 (최대 10회 시도)
-            for _ in range(10):
-                await asyncio.sleep(3)
+            # 2단계: finished: true 될 때까지 대기 (최대 20회, 5초 간격)
+            for _ in range(20):
+                await asyncio.sleep(5)
                 res2 = await client.get(
                     f"https://{RAPIDAPI_HOST}/api/v1/progress",
                     params={"id": progress_id},
                     headers=headers
                 )
                 data2 = res2.json()
-                download_url = data2.get("url") or data2.get("downloadUrl") or data2.get("link")
-                if download_url:
-                    return {"download_url": download_url}
+                if data2.get("finished") and data2.get("downloadUrl"):
+                    return {"download_url": data2["downloadUrl"]}
 
             raise HTTPException(status_code=500, detail="다운로드 링크 생성 시간 초과")
     except HTTPException:
