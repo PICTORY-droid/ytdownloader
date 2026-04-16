@@ -3,7 +3,6 @@ import re
 import httpx
 import asyncio
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import Optional
 
@@ -113,7 +112,7 @@ async def download_video(request: DownloadRequest):
                 data2 = res2.json()
                 download_url = data2.get("url") or data2.get("downloadUrl") or data2.get("link")
                 if download_url:
-                    return RedirectResponse(url=download_url)
+                    return {"download_url": download_url}
 
             raise HTTPException(status_code=500, detail="다운로드 링크 생성 시간 초과")
     except HTTPException:

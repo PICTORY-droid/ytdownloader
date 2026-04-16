@@ -41,9 +41,9 @@ export const downloadVideo = async (url: string) => {
     const response = await axios.post(
       `${API_URL}/download`,
       { url },
-      { responseType: 'blob', timeout: 300000 }
+      { timeout: 300000 }
     );
-    return response.data;
+    return response.data.download_url;
   } catch (error: any) {
     throw new Error(error.response?.data?.detail || error.message);
   }

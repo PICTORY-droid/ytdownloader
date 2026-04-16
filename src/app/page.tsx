@@ -154,14 +154,8 @@ export default function Home() {
     setDownloading(true);
     setError(null);
     try {
-      const blob = await downloadVideo(currentUrl);
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${videoInfo?.title || 'video'}.mp4`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const downloadUrl = await downloadVideo(currentUrl);
+      window.open(downloadUrl, '_blank');
     } catch {
       setError('// Error: 다운로드에 실패했습니다.');
     } finally {
