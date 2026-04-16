@@ -1,4 +1,6 @@
 import os
+import re
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from yt_dlp import YoutubeDL
@@ -7,6 +9,8 @@ from typing import Optional
 
 router = APIRouter()
 
+PIPED_API = "https://pipedapi.kavin.rocks"
+
 class VideoURL(BaseModel):
     url: str
 
@@ -14,64 +18,60 @@ class DownloadRequest(BaseModel):
     url: str
     filename: Optional[str] = None
 
+def extract_video_id(url: str) -> str:
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11})',
+        r'youtu\.be\/([0-9A-Za-z_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    raise ValueError("유효한 유튜브 URL이 아닙니다.")
+
 @router.post("/info")
 async def get_video_info(video_url: VideoURL):
     try:
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'skip_download': True,
-        }
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url.url, download=False)
+        video_id = extract_video_id(video_url.url)
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(f"{PIPED_API}/streams/{video_id}")
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="영상 정보를 가져올 수 없습니다.")
+            data = response.json()
             return {
-                "title": info.get('title'),
-                "thumbnail": info.get('thumbnail'),
-                "duration": info.get('duration'),
-                "uploader": info.get('uploader'),
-                "id": info.get('id')
+                "title": data.get("title"),
+                "thumbnail": data.get("thumbnailUrl"),
+                "duration": data.get("duration"),
+                "uploader": data.get("uploader"),
+                "id": video_id
             }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Could not get video info: {e}")
+        raise HTTPException(status_code=400, detail=f"영상 정보를 불러올 수 없습니다: {e}")
 
 @router.post("/download")
 async def download_video(request: DownloadRequest):
     try:
-        # Ensure download directory exists
         download_dir = "./downloads"
         os.makedirs(download_dir, exist_ok=True)
-
-        # Define output template for yt-dlp. It will save to the 'downloads' directory.
-        # The filename will be the video title + .mp4
         output_template = os.path.join(download_dir, '%(title)s.%(ext)s')
-        
         ydl_opts = {
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',
             'outtmpl': output_template,
             'merge_output_format': 'mp4',
             'noplaylist': True,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['web_creator', 'ios'],
+                }
+            },
         }
-
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(request.url, download=True)
             filename = ydl.prepare_filename(info)
-            
-            # After download, the file will be in the 'downloads' directory
-            # We need to return the path to the downloaded file
-            downloaded_file_path = filename
-
-            # For Vercel deployment, files downloaded to /tmp are accessible.
-            # We need to consider how to serve this file back to the user.
-            # For now, we'll return the path and let the frontend handle it.
-            # A better approach for Vercel would be to upload to cloud storage
-            # and return a pre-signed URL, but that's out of scope for now.
-
-            # Ensure the file actually exists before attempting to send
-            if not os.path.exists(downloaded_file_path):
-                raise HTTPException(status_code=500, detail="Downloaded file not found.")
-
-            # Return the file as a response
-            return FileResponse(path=downloaded_file_path, media_type="video/mp4", filename=os.path.basename(downloaded_file_path))
-
+            if not os.path.exists(filename):
+                raise HTTPException(status_code=500, detail="다운로드된 파일을 찾을 수 없습니다.")
+            return FileResponse(path=filename, media_type="video/mp4", filename=os.path.basename(filename))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not download video: {e}")
+        raise HTTPException(status_code=500, detail=f"다운로드 실패: {e}")
