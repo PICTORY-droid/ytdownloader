@@ -15,11 +15,7 @@ interface VideoInfo {
 }
 
 /* ── 타이핑 루프 훅 ── */
-const useTypingLoop = (
-  text: string,
-  typingSpeed = 60,
-  pauseTime = 5000
-) => {
+const useTypingLoop = (text: string, typingSpeed = 60, pauseTime = 5000) => {
   const [displayed, setDisplayed] = useState("");
   const [done, setDone] = useState(false);
 
@@ -218,7 +214,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center px-4 py-8 sm:p-8 gap-6 relative overflow-hidden">
+    <main className="min-h-screen bg-[#0d0d0d] flex flex-col items-center justify-center px-4 py-10 sm:py-16 sm:px-8 gap-6 relative overflow-hidden">
       {/* 레이어 0 – 매트릭스 레인 */}
       <MatrixRain />
 
@@ -233,7 +229,7 @@ export default function Home() {
 
         {/* 타이틀 바 */}
         <FadeInUp delay={0}>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
             <span className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0"></span>
             <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
@@ -249,27 +245,28 @@ export default function Home() {
 
         {/* 메인 카드 */}
         <FadeInUp delay={100}>
-          <div className="border border-gray-700 rounded-lg p-4 sm:p-6 bg-[#111111]/90 backdrop-blur-sm">
-            <p className="text-gray-500 text-xs sm:text-sm mb-4 font-mono">
+          <div className="border border-gray-700 rounded-lg p-5 sm:p-8 bg-[#111111]/90 backdrop-blur-sm">
+
+            <p className="text-gray-600 text-xs sm:text-sm mb-6 font-mono">
               // YouTube Video Downloader v1.0.0
             </p>
 
             {/* 로고 */}
             <FadeInUp delay={200}>
-              <div className="flex items-center justify-center mb-6 sm:mb-8">
+              <div className="flex items-center justify-center mb-8 sm:mb-10">
                 <div className="relative group w-full max-w-xs sm:max-w-sm">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-[#7c3aed] via-[#00ff88] to-[#7c3aed] rounded-lg blur opacity-40 group-hover:opacity-70 transition duration-500 animate-pulse"></div>
-                  <div className="relative flex items-center justify-center bg-[#0d0d0d] rounded-lg px-4 sm:px-6 py-3 border border-gray-700">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#7c3aed] via-[#00cfff] to-[#7c3aed] rounded-lg blur opacity-40 group-hover:opacity-70 transition duration-500 animate-pulse"></div>
+                  <div className="relative flex items-center justify-center bg-[#0d0d0d] rounded-lg px-4 sm:px-6 py-4 border border-gray-700">
                     <span className="text-[#7c3aed] text-2xl sm:text-3xl font-bold font-mono leading-none">
                       ▌
                     </span>
                     <h1 className="text-xl sm:text-2xl font-bold font-mono px-2 text-center">
                       <span className="text-white">YouTube </span>
-                      <span className="bg-gradient-to-r from-[#7c3aed] to-[#00ff88] bg-clip-text text-transparent">
+                      <span className="bg-gradient-to-r from-[#7c3aed] to-[#00cfff] bg-clip-text text-transparent">
                         Downloader
                       </span>
                     </h1>
-                    <span className="text-[#00ff88] text-2xl sm:text-3xl font-bold font-mono leading-none">
+                    <span className="text-[#00cfff] text-2xl sm:text-3xl font-bold font-mono leading-none">
                       ▐
                     </span>
                   </div>
@@ -284,11 +281,11 @@ export default function Home() {
 
             {/* 대기 메시지 */}
             {waitingMsg && (
-              <div className="mt-3 flex items-center gap-2">
-                <span className="animate-spin text-[#00ff88] flex-shrink-0">
+              <div className="mt-4 flex items-center gap-2">
+                <span className="animate-spin text-[#7c3aed] flex-shrink-0">
                   ⟳
                 </span>
-                <p className="text-[#00ff88] text-xs sm:text-sm font-mono">
+                <p className="text-[#a78bfa] text-xs sm:text-sm font-mono">
                   {waitingMsg}
                 </p>
               </div>
@@ -296,14 +293,14 @@ export default function Home() {
 
             {/* 에러 */}
             {error && (
-              <p className="text-red-400 text-xs sm:text-sm mt-3 font-mono break-words">
+              <p className="text-red-400 text-xs sm:text-sm mt-4 font-mono break-words">
                 {error}
               </p>
             )}
 
             {/* 비디오 정보 + 다운로드 */}
             {videoInfo && (
-              <div className="mt-6 flex flex-col gap-4">
+              <div className="mt-8 flex flex-col gap-4">
                 <FadeInUp delay={0}>
                   <VideoCard {...videoInfo} />
                 </FadeInUp>
@@ -320,7 +317,7 @@ export default function Home() {
 
         {/* 하단 크레딧 */}
         <FadeInUp delay={400}>
-          <div className="flex flex-col items-center gap-1 mt-3">
+          <div className="flex flex-col items-center gap-1.5 mt-4">
             <p className="text-gray-700 text-xs font-mono whitespace-nowrap">
               // yt-dlp · Next.js + FastAPI
             </p>

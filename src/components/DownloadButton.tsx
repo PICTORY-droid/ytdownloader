@@ -27,9 +27,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
             bg-[#1a1a1a] border border-[#00ff88] text-[#00ff88]
             text-xs font-mono px-4 py-1.5 rounded-full shadow-lg
             animate-fade-in-up z-50"
-          style={{
-            boxShadow: "0 0 16px rgba(0,255,136,0.4)",
-          }}
+          style={{ boxShadow: "0 0 16px rgba(0,255,136,0.4)" }}
         >
           ✓ // 다운로드 완료!
         </div>
@@ -38,20 +36,19 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       <button
         onClick={handleClick}
         disabled={loading}
-        className={`w-full py-3 rounded-md font-mono font-bold text-sm transition-all duration-200 relative overflow-hidden
-          ${
-            loading
-              ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-[#00ff88] to-[#7c3aed] text-black hover:opacity-90 hover:scale-[1.02]"
+        className={`w-full py-3 sm:py-4 rounded-md font-mono font-bold text-sm transition-all duration-300 relative overflow-hidden
+          ${loading
+            ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+            : 'border border-[#00cfff] text-[#00cfff] hover:bg-[#00cfff]/10 hover:text-white hover:border-[#00cfff] hover:shadow-[0_0_20px_rgba(0,207,255,0.4)]'
           }`}
       >
-        {/* 버튼 내부 홀로그램 shimmer */}
+        {/* shimmer 효과 */}
         {!loading && (
           <span
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+                "linear-gradient(90deg, transparent 0%, rgba(0,207,255,0.08) 50%, transparent 100%)",
               animation: "shimmer 2.5s infinite",
             }}
           />
